@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find Your Style</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; 
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+
+    header {
+      background-color: #333;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    /* Shared button styling */
+    button {
+      background-color: #0066cc;
+      color: white;
+      padding: 0.7rem 1.2rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background-color: #004c99;
+    }
+
+    /* STEP 1: Upload section */
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 2rem auto;
+      max-width: 400px;
+      background: white;
+      padding: 1rem;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .upload-section h2 {
+      margin-top: 0;
+    }
+    .upload-section input[type="file"] {
+      margin: 1rem 0;
+    }
+    .upload-section label {
+      display: block;
+      margin: 0.5rem 0;
+    }
+
+    /* STEP 2: Results section (hidden initially) */
+    .results-section {
+      display: none; /* hidden by default */
+      margin: 1rem;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+      margin: 1rem;
+    }
+    /* Left side: Photo & details panel */
+    .photo-panel {
+      flex: 1;
+      min-width: 250px;
+      background: white;
+      padding: 1rem;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .photo-panel img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+      margin-bottom: 1rem;
+    }
+    .photo-panel h3 {
+      margin-top: 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+    /* Right side: Embedded videos */
+    .video-panel {
+      flex: 2;
+      background: white;
+      padding: 1rem;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .video-panel h2 {
+      margin-top: 0;
+    }
+    .video-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .video-item iframe {
+      width: 200px;
+      height: 150px;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Find Your Style</h1>
+  </header>
+
+  <!-- STEP 1: Upload Section -->
+  <div id="uploadSection" class="upload-section">
+    <h2>Upload Face Image</h2>
+    <p>Please select a face image, enter gender/ethnicity, and click Analyze.</p>
+
+    <!-- Gender and Ethnicity Text Inputs -->
+    <label>
+      Gender:
+      <input type="text" id="genderInput" placeholder="e.g. woman, man, non-binary" />
+    </label>
+<!-- ✨ NEW: fixed‑list ethnicity selector -->
+    <label>Ethnicity:
+      <select id="ethnicitySelect" required>
+        <option value="">-- choose one --</option>
+        <option>South Asian/Indian</option>
+        <option>East Asian</option>
+        <option>Black/African-American</option>
+        <option>Latinx/Hispanic</option>
+        <option>White/Caucasian</option>
+      </select>
+    </label>
+
+    <!-- File Input -->
+    <input type="file" id="fileInput" accept="image/*" />
+
+    <button id="analyzeBtn">Analyze</button>
+  </div>
+
+  <!-- STEP 2: Results Section (hidden initially) -->
+  <div id="resultsSection" class="results-section">
+    <div class="container">
+      <!-- Left: Photo & Profile Details -->
+      <div class="photo-panel">
+        <img id="uploadedPhoto" src="" alt="User Photo" />
+        <h3>Face Shape: <span id="faceShape"></span></h3>
+        <h3>Ethnicity: <span id="ethnicity"></span></h3>
+        <h3>Gender: <span id="gender"></span></h3>
+      </div>
+
+      <!-- Right: Embedded videos -->
+      <div class="video-panel">
+        <h2>Recommended Videos</h2>
+        <div id="videoList" class="video-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const fileInput = document.getElementById("fileInput");
+    const uploadSection = document.getElementById("uploadSection");
+    const resultsSection = document.getElementById("resultsSection");
+
+    // New references for gender & ethnicity textboxes
+    const genderInput = document.getElementById("genderInput");
+    const ethnicitySelect = document.getElementById("ethnicitySelect");
+
+    // Elements in the results panel
+    const uploadedPhoto = document.getElementById("uploadedPhoto");
+    const faceShapeEl = document.getElementById("faceShape");
+    const ethnicityEl = document.getElementById("ethnicity");
+    const genderEl = document.getElementById("gender");
+    const videoListEl = document.getElementById("videoList");
+
+    let photoDataURL = ""; // to store the user's uploaded photo as data URL
+
+    // Listen for file input changes to create a local preview
+    fileInput.addEventListener("change", (e) => {
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          photoDataURL = evt.target.result;
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+    });
+
+    analyzeBtn.addEventListener("click", async () => {
+      // 1) Validate file input
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please select an image file first.");
+        return;
+      }
+      // 2) Retrieve user-entered gender/ethnicity
+      const userGender = genderInput.value.trim();
+      const userEthnicity = ethnicitySelect.value.trim();
+
+      if (!userGender || !userEthnicity) {
+        alert("Please enter both gender and ethnicity.");
+        return;
+      }
+
+      // 3) Build form data
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      formData.append("gender", userGender);
+      formData.append("ethnicity", userEthnicity);
+
+      try {
+        // 4) POST to your Flask endpoint
+        const response = await fetch("/api/analyze", {   //  ✓ relative path, no port
+							  method: "POST",
+ 							 body: formData,
+							});
+        if (!response.ok) {
+          throw new Error("Server error: " + response.status);
+        }
+
+        const data = await response.json();
+        console.log("Analysis result:", data);
+
+        // 5) Hide the upload section, show results
+        uploadSection.style.display = "none";
+        resultsSection.style.display = "block";
+
+        // 6) Populate the results
+        // Show the user's uploaded photo
+        uploadedPhoto.src = photoDataURL;
+
+        // Face shape, ethnicity, gender from JSON
+        faceShapeEl.textContent = data.face_shape || "";
+        ethnicityEl.textContent = data.ethnicity || "";
+        genderEl.textContent = data.gender || "";
+
+        // Clear existing videos
+        videoListEl.innerHTML = "";
+
+        // 7) For each recommended video, create an <iframe> instead of a link
+        if (data.recommendations && Array.isArray(data.recommendations)) {
+          data.recommendations.forEach((vid) => {
+            const videoItem = document.createElement("div");
+            videoItem.className = "video-item";
+
+            // Create an iframe for the video
+            const iframe = document.createElement("iframe");
+            iframe.src = convertToEmbedURL(vid.url);
+            iframe.allowFullscreen = true;
+            
+            videoItem.appendChild(iframe);
+            videoListEl.appendChild(videoItem);
+          });
+        }
+      } catch (err) {
+        console.error("Error analyzing face:", err);
+        alert("There was an error processing your image. Check console for details.");
+      }
+    });
+
+    // Helper: Convert normal YouTube link to embed form
+    function convertToEmbedURL(url) {
+      // If url is e.g. "https://www.youtube.com/watch?v=abcdef"
+      // we'll convert it to "https://www.youtube.com/embed/abcdef"
+      const regex = /[?&]v=([^&#]+)/;
+      const match = regex.exec(url);
+      if (match && match[1]) {
+        return "https://www.youtube.com/embed/" + match[1];
+      }
+      // fallback
+      return url;
+    }
+  </script>
+</body>
+</html>

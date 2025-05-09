@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find Your Style</title>
+  <style>
+    body         {font-family: Arial, sans-serif; margin:0; background:#f4f6f8;}
+    header       {background:#212121; color:#fff; padding:1rem; text-align:center;}
+    .card        {background:#fff; padding:1.5rem; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);}    
+    .btn         {background:#1976d2; color:#fff; padding:0.7rem 1.4rem; border:none; border-radius:4px; cursor:pointer;}
+    .btn:hover   {background:#0f5fab;}
+    .upload      {max-width:420px; margin:2rem auto; display:flex; flex-direction:column; gap:0.8rem; align-items:stretch;}
+    .results     {display:none; margin:2rem;}
+    .flex        {display:flex; gap:1rem; flex-wrap:wrap;}
+    .photo       {flex:1 1 260px; text-align:center;}
+    .photo img   {max-width:100%; border-radius:6px; margin-bottom:0.5rem;}
+    .videos      {flex:2 1 400px;}
+    .video-item  {margin:0.5rem;}
+    .video-item iframe {width:280px; height:160px; border:0;}
+  </style>
+</head>
+<body>
+  <header><h1>Find Your Style</h1></header>
+
+  <!-- Upload Section -->
+  <section id="uploadSection" class="upload card">
+    <h2>Upload Face Image</h2>
+    <label>
+      Ethnicity:
+      <select id="ethnicity" required>
+        <option value="">-- choose one --</option>
+        <option>South Asian/Indian</option>
+        <option>East Asian</option>
+        <option>Black/African‑American</option>
+        <option>Latinx/Hispanic</option>
+        <option>White/Caucasian</option>
+      </select>
+    </label>
+    <input type="file" id="fileInput" accept="image/*" />
+    <button class="btn" id="analyzeBtn">Analyze</button>
+  </section>
+
+  <!-- Results Section -->
+  <section id="resultsSection" class="results">
+    <div class="flex">
+      <div class="photo card">
+        <img id="photoPreview" src="" alt="Uploaded photo" />
+        <h3>Face Shape: <span id="faceShapeText"></span></h3>
+        <h3>Ethnicity:  <span id="ethnicityText"></span></h3>
+      </div>
+      <div class="videos card">
+        <h2>Recommended Videos</h2>
+        <div id="videoList" class="flex"></div>
+      </div>
+    </div>
+  </section>
+
+<script>
+const fileInput   = document.getElementById("fileInput");
+const ethnicity   = document.getElementById("ethnicity");
+const analyzeBtn  = document.getElementById("analyzeBtn");
+const uploadSec   = document.getElementById("uploadSection");
+const resultsSec  = document.getElementById("resultsSection");
+const photoPrev   = document.getElementById("photoPreview");
+const faceText    = document.getElementById("faceShapeText");
+const ethText     = document.getElementById("ethnicityText");
+const videoList   = document.getElementById("videoList");
+let photoDataURL  = "";
+
+// Preview image when selected
+fileInput.addEventListener("change", () => {
+  if (fileInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => photoDataURL = e.target.result;
+    reader.readAsDataURL(fileInput.files[0]);
+  }
+});
+
+analyzeBtn.addEventListener("click", async () => {
+  if (!fileInput.files[0]) {
+    alert("Please choose an image.");
+    return;
+  }
+  if (!ethnicity.value) {
+    alert("Please choose an ethnicity.");
+    return;
+  }
+
+  const form = new FormData();
+  form.append("file",      fileInput.files[0]);
+  form.append("ethnicity", ethnicity.value);
+
+  try {
+    const res  = await fetch("/api/analyze", {method: "POST", body: form});
+    if (!res.ok) throw new Error("Server returned " + res.status);
+    const data = await res.json();
+
+    // show results
+    uploadSec.style.display  = "none";
+    resultsSec.style.display = "block";
+    photoPrev.src            = photoDataURL;
+    faceText.textContent     = data.face_shape;
+    ethText.textContent      = data.ethnicity;
+    videoList.innerHTML      = "";
+
+    (data.recommendations || []).forEach(url => {
+      const div    = document.createElement("div");
+      div.className = "video-item";
+      const iframe = document.createElement("iframe");
+      iframe.src   = toEmbed(url);
+      iframe.allowFullscreen = true;
+      div.appendChild(iframe);
+      videoList.appendChild(div);
+    });
+  } catch (err) {
+    console.error(err);
+    alert("An error occurred. Check console for details.");
+  }
+});
+
+function toEmbed(url) {
+  const m = url.match(/[?&]v=([^&#]+)/);
+  return m ? `https://www.youtube.com/embed/${m[1]}` : url;
+}
+</script>
+
+</body>
+</html>
