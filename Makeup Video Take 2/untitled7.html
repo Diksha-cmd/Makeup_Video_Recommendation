@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beauty Blueprint - Personalized Makeup Tutorials</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FDFCFB; }
+        .active-nav { color: #D97706; font-weight: 600; }
+        .dashboard-section { transition: opacity 0.5s ease-in-out, max-height 1s ease-in-out; }
+        .hidden-section { opacity: 0; max-height: 0; overflow: hidden; pointer-events: none; }
+        .visible-section { opacity: 1; max-height: 5000px; }
+        .progress-bar-inner { transition: width 0.5s ease-out; }
+        .video-card, .guru-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .video-card:hover, .guru-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .filter-modal { transition: opacity 0.3s ease-in-out; }
+        .filter-modal-content { transition: transform 0.3s ease-in-out; }
+        .filter-modal.is-open .filter-modal-content { transform: translateY(0); }
+        .pagination-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body class="text-stone-700">
+
+    <header class="bg-white/90 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-amber-600">Beauty Blueprint</a>
+            <div class="hidden md:flex items-center space-x-8 text-sm font-medium">
+                <a href="#onboarding" class="nav-link hover:text-amber-600 transition-colors">Analyzer</a>
+                <a href="#dashboard" class="nav-link hover:text-amber-600 transition-colors">Recommendations</a>
+                <a href="#explore" class="nav-link hover:text-amber-600 transition-colors">Explore</a>
+                <a href="#guru-match" class="nav-link hover:text-amber-600 transition-colors">Guru Match</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-stone-600">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="onboarding" class="py-20 md:py-32 bg-amber-50">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-stone-800 mb-4">Discover Makeup Tutorials Made for You.</h1>
+                <p class="max-w-2xl mx-auto text-lg text-stone-600 mb-8">Stop guessing. Upload a photo and we'll analyze your unique facial features to find YouTube tutorials that actually work for you.</p>
+                
+                <div class="max-w-md mx-auto">
+                    <input type="file" id="photo-upload" class="hidden" accept="image/*">
+                    <label for="photo-upload" id="upload-label" class="bg-amber-500 hover:bg-amber-600 text-white text-lg font-bold py-4 px-8 rounded-full shadow-lg cursor-pointer transition-transform transform hover:scale-105 inline-block">
+                        ✨ Analyze My Features
+                    </label>
+
+                    <div id="analysis-progress" class="hidden mt-8 text-left">
+                        <p id="progress-text" class="text-sm font-medium text-stone-600 mb-2">Starting analysis...</p>
+                        <div class="w-full bg-stone-200 rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-amber-500 h-2.5 rounded-full progress-bar-inner" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-stone-400 mt-4">For demo purposes, no image is actually uploaded. Just click!</p>
+            </div>
+        </section>
+
+        <section id="dashboard" class="dashboard-section hidden-section py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-stone-800">Your Personalized Dashboard</h2>
+                    <p class="text-stone-600 mt-2">Based on your analysis, here are recommendations tailored to you. Use the filters to refine your results.</p>
+                </div>
+                <div class="flex flex-col md:flex-row gap-8 lg:gap-12">
+                    <aside class="w-full md:w-1/3 lg:w-1/4">
+                        <div class="sticky top-24 space-y-8">
+                            <div class="bg-white p-6 rounded-xl shadow-md">
+                                <h3 class="font-bold text-lg mb-4 text-stone-800">Your Beauty Blueprint</h3>
+                                <div id="features-list" class="mb-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-stone-700">
+                                    </div>
+                                <div id="blueprint-summary" class="space-y-2 text-sm text-stone-600">
+                                    <p class="text-center text-amber-600 font-semibold">Generating detailed analysis...</p>
+                                </div>
+                            </div>
+                            
+                            <div id="desktop-filters" class="hidden md:block bg-white p-6 rounded-xl shadow-md">
+                                <h3 class="font-bold text-lg mb-4 text-stone-800">Smart Filters</h3>
+                                <div id="filters-content" class="space-y-6"></div>
+                            </div>
+                            
+                            <button id="mobile-filter-button" class="md:hidden w-full bg-amber-500 text-white font-bold py-3 rounded-lg shadow-md">Filter Results</button>
+                        </div>
+                    </aside>
+
+                    <div class="w-full md:w-2/3 lg:w-3/4">
+                        <div id="video-feed" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            </div>
+                        <div id="pagination-controls" class="flex justify-center items-center mt-8 space-x-4">
+                            <button id="prev-page-btn" class="pagination-button bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">Previous</button>
+                            <span id="page-info" class="text-stone-600 font-medium">Page 1 of 1</span>
+                            <button id="next-page-btn" class="pagination-button bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="explore" class="py-16 bg-stone-50">
+             <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-stone-800">Explore & Learn</h2>
+                    <p class="text-stone-600 mt-2">Dive deeper into techniques for specific features.</p>
+                </div>
+                <div id="explore-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    </div>
+             </div>
+        </section>
+
+        <section id="guru-match" class="py-16 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-stone-800">Find Your Beauty Guru Match</h2>
+                    <p class="max-w-2xl mx-auto text-stone-600 mt-2">Discover makeup influencers whose facial features align with yours, making their tutorials even more relatable and helpful!</p>
+                </div>
+
+                <div class="max-w-3xl mx-auto text-center mb-8">
+                    <p id="guru-match-user-summary" class="text-lg text-stone-600 mb-4">Click below to find influencers matching your unique features:</p>
+                    <button id="find-guru-match-button" class="bg-amber-500 hover:bg-amber-600 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg cursor-pointer transition-transform transform hover:scale-105">
+                        🌟 Find My Guru Match!
+                    </button>
+                    <div id="guru-match-loading" class="hidden mt-4 text-amber-600 font-semibold">Matching you with the perfect gurus...</div>
+                </div>
+
+                <div id="guru-matches-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
+                    </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-800 text-white">
+        <div class="container mx-auto px-6 py-8 text-center text-stone-400 text-sm">
+            <p>&copy; 2025 Beauty Blueprint. A prototype for a smarter way to find makeup tutorials.</p>
+        </div>
+    </footer>
+    
+    <div id="filter-modal" class="filter-modal fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-end md:hidden opacity-0 pointer-events-none">
+        <div class="filter-modal-content bg-white w-full max-w-lg rounded-t-2xl p-6 transform translate-y-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-stone-800">Filter Results</h3>
+                <button id="close-filter-modal" class="text-stone-500">&times;</button>
+            </div>
+            <div id="mobile-filters-content" class="space-y-6"></div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // Mock Data - Extended for Lazy Loading Demo
+        const allMockVideos = [
+            { id: 1, title: "Smoky Eye for Hooded Eyes", creator: "GlamGuru", thumb: "https://placehold.co/600x400/333/FFF?text=Video+1", features: ["hooded_eyes"], style: "glam", skill: "intermediate", duration: "medium" },
+            { id: 2, title: "Perfect Contour for Round Faces", creator: "MakeupMaven", thumb: "https://placehold.co/600x400/555/FFF?text=Video+2", features: ["round_face"], style: "everyday", skill: "beginner", duration: "quick" },
+            { id: 3, title: "Eyeliner Tricks for Downturned Eyes", creator: "ArtistryAlice", thumb: "https://placehold.co/600x400/777/FFF?text=Video+3", features: ["downturned_eyes"], style: "everyday", skill: "intermediate", duration: "quick" },
+            { id: 4, title: "Natural Foundation for Warm Undertones", creator: "BeautyByBen", thumb: "https://placehold.co/600x400/444/FFF?text=Video+4", features: ["warm_undertone"], style: "natural", skill: "beginner", duration: "medium" },
+            { id: 5, title: "Bold Lip for Oval Faces", creator: "ContourChris", thumb: "https://placehold.co/600x400/666/FFF?text=Video+5", features: ["oval_face"], style: "glam", skill: "beginner", duration: "quick" },
+            { id: 6, title: "Lifting Makeup for Hooded & Downturned Eyes", creator: "GlamGuru", thumb: "https://placehold.co/600x400/888/FFF?text=Video+6", features: ["hooded_eyes", "downturned_eyes"], style: "glam", skill: "advanced", duration: "long" },
+            { id: 7, title: "Soft Sculpt for Round Faces", creator: "RadiantRiley", thumb: "https://placehold.co/600x400/222/FFF?text=Video+7", features: ["round_face"], style: "natural", skill: "intermediate", duration: "medium" },
+            { id: 8, title: "Everyday Makeup for Oval Faces", creator: "MakeupMaven", thumb: "https://placehold.co/600x400/999/FFF?text=Video+8", features: ["oval_face"], style: "everyday", skill: "beginner", duration: "medium" },
+            // Duplicating for lazy load demo
+            { id: 9, title: "Glam Look for Hooded Eyes", creator: "GlamGuru", thumb: "https://placehold.co/600x400/111/FFF?text=Video+9", features: ["hooded_eyes"], style: "glam", skill: "intermediate", duration: "medium" },
+            { id: 10, title: "Daily Makeup for Round Faces", creator: "MakeupMaven", thumb: "https://placehold.co/600x400/A00/FFF?text=Video+10", features: ["round_face"], style: "everyday", skill: "beginner", duration: "quick" },
+            { id: 11, title: "Smoky Eye for Downturned Eyes", creator: "ArtistryAlice", thumb: "https://placehold.co/600x400/B00/FFF?text=Video+11", features: ["downturned_eyes"], style: "glam", skill: "intermediate", duration: "quick" },
+            { id: 12, title: "Foundation for Cool Undertones", creator: "BeautyByBen", thumb: "https://placehold.co/600x400/C00/FFF?text=Video+12", features: ["cool_undertone"], style: "natural", skill: "beginner", duration: "medium" },
+            { id: 13, title: "Lip Art for Oval Faces", creator: "ContourChris", thumb: "https://placehold.co/600x400/D00/FFF?text=Video+13", features: ["oval_face"], style: "glam", skill: "advanced", duration: "quick" },
+            { id: 14, title: "Evening Look for Hooded Eyes", creator: "GlamGuru", thumb: "https://placehold.co/600x400/E00/FFF?text=Video+14", features: ["hooded_eyes"], style: "glam", skill: "advanced", duration: "long" },
+            { id: 15, title: "Natural Radiance for Round Faces", creator: "RadiantRiley", thumb: "https://placehold.co/600x400/F00/FFF?text=Video+15", features: ["round_face"], style: "natural", skill: "intermediate", duration: "medium" },
+            { id: 16, title: "Quick Everyday Makeup for Oval Faces", creator: "MakeupMaven", thumb: "https://placehold.co/600x400/0A0/FFF?text=Video+16", features: ["oval_face"], style: "everyday", skill: "beginner", duration: "medium" },
+        ];
+        
+        const exploreTopics = [
+            { id: 'hooded_eyes', title: 'Hooded Eyes', icon: '👁️', desc: 'Learn to create depth and lift.'},
+            { id: 'round_face', title: 'Round Face', icon: '😊', desc: 'Master contouring and highlighting.'},
+            { id: 'downturned_eyes', title: 'Downturned Eyes', icon: '👀', desc: 'Techniques for an upward lift.'},
+            { id: 'oval_face', title: 'Oval Face', icon: '🙂', desc: 'Versatile tips for balanced features.'},
+        ];
+
+        const mockInfluencers = [
+            { id: 201, name: "Bella Glam", avatar: "https://placehold.co/100x100/FBBF24/FFF?text=BG", features: ["oval_face", "almond_eyes", "warm_undertone"], bio: "Known for flawless foundation and vibrant eye looks." },
+            { id: 202, name: "Contour Queen", avatar: "https://placehold.co/100x100/F59E0B/FFF?text=CQ", features: ["square_face", "round_eyes", "cool_undertone"], bio: "Expert in sculpted looks and sharp contours." },
+            { id: 203, name: "Lash Legend", avatar: "https://placehold.co/100x100/D97706/FFF?text=LL", features: ["round_face", "hooded_eyes", "neutral_undertone"], bio: "Master of eye makeup, especially for hooded eyes." },
+            { id: 204, name: "Skin Savvy", avatar: "https://placehold.co/100x100/EF4444/FFF?text=SS", features: ["oval_face", "downturned_eyes", "warm_undertone"], bio: "Focuses on healthy skin and natural enhancement." },
+            { id: 205, name: "Brow Boss", avatar: "https://placehold.co/100x100/34D399/FFF?text=BB", features: ["heart_face", "almond_eyes", "cool_undertone"], bio: "Everything you need for perfect brows and subtle glam." },
+        ];
+
+        // Unicode icons for features
+        const featureIcons = {
+            'round_face': '🔵', // Blue circle for round face shape
+            'oval_face': '🥚', // Egg for oval face
+            'square_face': '🔲', // Square symbol for square face
+            'heart_face': '🩷', // Pink heart for heart shape
+            'hooded_eyes': '👁️', // Generic eye for hooded eyes
+            'almond_eyes': '👁️', // Generic eye
+            'downturned_eyes': '😔', // Pensive face for downturned
+            'round_eyes': '😮', // Surprised face for round eyes
+            'warm_undertone': '☀️', // Sun for warmth, as requested
+            'cool_undertone': '💙', // Blue heart for cool
+            'neutral_undertone': '⚪', // White circle for neutrality
+            'fuller_lips': '💋', // Kiss mark for fuller lips
+            'narrow_nose': '👃', // Nose icon
+        };
+
+
+        // Element Selectors
+        const uploadLabel = document.getElementById('upload-label');
+        const analysisProgress = document.getElementById('analysis-progress');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const dashboardSection = document.getElementById('dashboard');
+        const videoFeed = document.getElementById('video-feed');
+        const blueprintSummary = document.getElementById('blueprint-summary');
+        const featuresList = document.getElementById('features-list'); 
+
+        // Pagination controls
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const pageInfo = document.getElementById('page-info');
+
+        // Filters
+        const filtersContent = document.getElementById('filters-content');
+        const mobileFiltersContent = document.getElementById('mobile-filters-content');
+        
+        // Mobile menu / modals
+        const mobileFilterButton = document.getElementById('mobile-filter-button');
+        const filterModal = document.getElementById('filter-modal');
+        const closeFilterModal = document.getElementById('close-filter-modal');
+        
+        // Explore section
+        const exploreGrid = document.getElementById('explore-grid');
+
+        // Guru Match section
+        const findGuruMatchButton = document.getElementById('find-guru-match-button');
+        const guruMatchUserSummary = document.getElementById('guru-match-user-summary');
+        const guruMatchLoading = document.getElementById('guru-match-loading');
+        const guruMatchesGrid = document.getElementById('guru-matches-grid');
+
+        let userProfile = {
+            face: "Round",
+            eyes: "Hooded",
+            undertone: "Warm",
+            rawFeatures: "Round face, hooded eyes, and warm undertones", 
+            featureKeys: ['round_face', 'hooded_eyes', 'warm_undertone'] 
+        };
+        
+        let activeFilters = {
+            style: 'all',
+            skill: 'all',
+            duration: 'all'
+        };
+
+        let currentPage = 1;
+        const videosPerPage = 6;
+        let totalPages = 1;
+        let allFilteredVideos = [];
+
+
+        // --- ONBOARDING & ANALYSIS ---
+        uploadLabel.addEventListener('click', (e) => {
+            e.preventDefault();
+            uploadLabel.classList.add('hidden');
+            analysisProgress.classList.remove('hidden');
+            simulateAnalysis();
+        });
+
+        function simulateAnalysis() {
+            const steps = [
+                { text: "Uploading photo...", duration: 500, width: 20 },
+                { text: "Analyzing face shape...", duration: 1000, width: 50 },
+                { text: "Identifying eye shape...", duration: 1000, width: 80 },
+                { text: "Calibrating recommendations...", duration: 800, width: 100 },
+            ];
+
+            let cumulativeDelay = 0;
+            steps.forEach(step => {
+                setTimeout(() => {
+                    progressText.textContent = step.text;
+                    progressBar.style.width = `${step.width}%`;
+                }, cumulativeDelay);
+                cumulativeDelay += step.duration;
+            });
+
+            setTimeout(() => {
+                populateDashboard();
+                dashboardSection.classList.remove('hidden-section');
+                dashboardSection.classList.add('visible-section');
+                document.getElementById('onboarding').classList.add('hidden');
+                dashboardSection.scrollIntoView({ behavior: 'smooth' });
+            }, cumulativeDelay + 500);
+        }
+
+        // --- DASHBOARD & FEED ---
+        async function populateDashboard() {
+            renderFeaturesList(); 
+            await simulateLLMAnalysis(userProfile.rawFeatures); 
+            applyFiltersAndRenderVideos(); 
+            renderFilters();
+        }
+
+        async function simulateLLMAnalysis(features) {
+            blueprintSummary.innerHTML = `<p class="text-center text-amber-600 font-semibold">Generating detailed analysis...</p>`;
+            try {
+                // Simulating an LLM API call
+                const prompt = `Provide a concise, engaging, and descriptive analysis of the following facial features for a makeup enthusiast: ${features}. Explain what these features generally imply for makeup application (e.g., challenges, opportunities, best practices) in a friendly tone. Keep it to 2-3 sentences.`;
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "" 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                // Using a timeout to simulate network delay for demonstration purposes
+                const simulatedResponse = await new Promise(resolve => setTimeout(() => {
+                    resolve({
+                        candidates: [{
+                            content: {
+                                parts: [{ text: `With your ${userProfile.face.toLowerCase()} face, you have a beautiful natural softness, while your ${userProfile.eyes.toLowerCase()} eyes offer unique opportunities for definition and lift. Your ${userProfile.undertone.toLowerCase()} undertone will truly shine with harmonious makeup shades. This combination allows for a versatile range of looks, focusing on enhancing your natural beauty.` }]
+                            }
+                        }]
+                    });
+                }, 1500)); 
+
+                const result = simulatedResponse;
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    blueprintSummary.innerHTML = `<p class="mb-4">${text}</p>`;
+                } else {
+                    blueprintSummary.innerHTML = `<p class="text-red-500">Failed to generate detailed analysis. Please try again.</p>`;
+                }
+            } catch (error) {
+                console.error("LLM analysis failed:", error);
+                blueprintSummary.innerHTML = `<p class="text-red-500">Error generating detailed analysis.</p>`;
+            }
+        }
+
+        function renderFeaturesList() {
+            featuresList.innerHTML = userProfile.featureKeys.map(key => `
+                <div class="flex flex-col items-center space-y-1 bg-stone-50 p-2 rounded-lg shadow-sm w-fit min-w-[70px] flex-grow">
+                    <span class="text-2xl">${featureIcons[key] || '✨'}</span>
+                    <span class="font-medium capitalize text-center text-xs">${key.replace(/_/g, ' ')}</span>
+                </div>
+            `).join('');
+        }
+
+        function applyFiltersAndRenderVideos() {
+            currentPage = 1; // Always reset to first page when filters change
+
+            const userFeaturesFormatted = userProfile.featureKeys;
+
+            allFilteredVideos = allMockVideos.filter(video => {
+                const matchesFeature = video.features.some(vf => userFeaturesFormatted.includes(vf));
+                const matchesStyle = activeFilters.style === 'all' || video.style === activeFilters.style;
+                const matchesSkill = activeFilters.skill === 'all' || video.skill === activeFilters.skill;
+                const matchesDuration = activeFilters.duration === 'all' || video.duration === activeFilters.duration;
+                return matchesFeature && matchesStyle && matchesSkill && matchesDuration;
+            });
+            
+            totalPages = Math.ceil(allFilteredVideos.length / videosPerPage);
+            renderVideosForCurrentPage(); 
+        }
+
+        function renderVideosForCurrentPage() {
+            const startIndex = (currentPage - 1) * videosPerPage;
+            const endIndex = startIndex + videosPerPage;
+            const videosToDisplay = allFilteredVideos.slice(startIndex, endIndex);
+
+            if (videosToDisplay.length === 0) {
+                videoFeed.innerHTML = `<p class="col-span-full text-center text-stone-500">No videos match your current filters or there are no more videos.</p>`;
+            } else {
+                videoFeed.innerHTML = videosToDisplay.map(video => `
+                    <div class="video-card bg-white rounded-xl shadow-md overflow-hidden">
+                        <img src="${video.thumb}" alt="${video.title}" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h4 class="font-bold text-stone-800 truncate">${video.title}</h4>
+                            <p class="text-sm text-stone-500 mb-2">by ${video.creator}</p>
+                            <div class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-1 rounded-full inline-block">
+                               ✨ Great for ${video.features.map(f => f.replace(/_/g, ' ')).join(', ')}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderVideosForCurrentPage();
+                videoFeed.scrollIntoView({ behavior: 'smooth', block: 'start' }); // Scroll to top of videos
+            }
+        });
+
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderVideosForCurrentPage();
+                videoFeed.scrollIntoView({ behavior: 'smooth', block: 'start' }); // Scroll to top of videos
+            }
+        });
+
+
+        // --- FILTERS ---
+        function renderFilters() {
+            const filtersHtml = `
+                <div>
+                    <h4 class="font-semibold mb-3 text-stone-600">Makeup Style</h4>
+                    <div class="space-y-2 text-sm" data-filter-group="style">
+                        ${createFilterRadio('style', 'all', 'All Styles', activeFilters.style === 'all')}
+                        ${createFilterRadio('style', 'everyday', 'Everyday', activeFilters.style === 'everyday')}
+                        ${createFilterRadio('style', 'natural', 'Natural', activeFilters.style === 'natural')}
+                        ${createFilterRadio('style', 'glam', 'Glam', activeFilters.style === 'glam')}
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-3 text-stone-600">Skill Level</h4>
+                    <div class="space-y-2 text-sm" data-filter-group="skill">
+                        ${createFilterRadio('skill', 'all', 'All Levels', activeFilters.skill === 'all')}
+                        ${createFilterRadio('skill', 'beginner', 'Beginner', activeFilters.skill === 'beginner')}
+                        ${createFilterRadio('skill', 'intermediate', 'Intermediate', activeFilters.skill === 'intermediate')}
+                        ${createFilterRadio('skill', 'advanced', 'Advanced', activeFilters.skill === 'advanced')}
+                    </div>
+                </div>
+            `;
+            filtersContent.innerHTML = filtersHtml;
+            mobileFiltersContent.innerHTML = filtersHtml;
+
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const group = e.target.name;
+                    const value = e.target.value;
+                    activeFilters[group] = value;
+                    applyFiltersAndRenderVideos(); // Re-apply filters and reload from start
+                });
+            });
+        }
+        
+        function createFilterRadio(group, value, label, checked = false) {
+            return `
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="${group}" value="${value}" class="form-radio text-amber-500" ${checked ? 'checked' : ''}>
+                    <span>${label}</span>
+                </label>
+            `;
+        }
+        
+        // --- CHARTS ---
+        // Removed renderLooksChart function
+        
+        // --- EXPLORE SECTION ---
+        exploreGrid.innerHTML = exploreTopics.map(topic => `
+            <div class="bg-white p-6 rounded-xl shadow-md text-center video-card cursor-pointer">
+                <p class="text-3xl mb-2">${topic.icon}</p>
+                <h4 class="font-bold text-stone-800">${topic.title}</h4>
+                <p class="text-sm text-stone-500">${topic.desc}</p>
+            </div>
+        `).join('');
+
+        // --- GURU MATCH SECTION ---
+        findGuruMatchButton.addEventListener('click', () => {
+            guruMatchLoading.classList.remove('hidden');
+            findGuruMatchButton.classList.add('hidden');
+            guruMatchesGrid.innerHTML = ''; 
+
+            setTimeout(() => {
+                guruMatchLoading.classList.add('hidden');
+                renderGuruMatches();
+            }, 1500);
+        });
+
+        function renderGuruMatches() {
+            const userFeaturesFormatted = userProfile.featureKeys;
+
+            guruMatchUserSummary.innerHTML = `Influencers matching your features: <span class="font-bold">${userProfile.face} face, ${userProfile.eyes} eyes, ${userProfile.undertone} undertone</span>.`;
+
+            const matchedGurus = mockInfluencers.filter(guru => 
+                guru.features.some(gf => userFeaturesFormatted.includes(gf))
+            );
+
+            guruMatchesGrid.innerHTML = matchedGurus.map(guru => {
+                const matchingFeatures = guru.features.filter(gf => userFeaturesFormatted.includes(gf));
+                return `
+                    <div class="guru-card bg-white p-6 rounded-xl shadow-md text-center">
+                        <img src="${guru.avatar}" alt="${guru.name}" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover">
+                        <h4 class="font-bold text-stone-800">${guru.name}</h4>
+                        <p class="text-sm text-stone-500 mb-3">${guru.bio}</p>
+                        <div class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-1 rounded-full inline-block">
+                           Match: ${matchingFeatures.map(f => f.replace(/_/g, ' ')).join(', ')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- MODALS & MOBILE ---
+        mobileFilterButton.addEventListener('click', () => {
+            filterModal.classList.add('is-open', 'opacity-100', 'pointer-events-auto');
+        });
+        closeFilterModal.addEventListener('click', () => {
+            filterModal.classList.remove('is-open', 'opacity-100', 'pointer-events-auto');
+        });
+        filterModal.addEventListener('click', (e) => {
+            if (e.target === filterModal) {
+                 filterModal.classList.remove('is-open', 'opacity-100', 'pointer-events-auto');
+            }
+        });
+    });
+    </script>
+</body>
+</html>
