@@ -1,12 +1,12 @@
-YouTube Makeup Video Recommender - Data Ingestion (Phase 1a)
+### YouTube Makeup Video Recommender - Data Ingestion (Phase 1a)
 This repository contains the initial phase of a project aimed at building a personalized YouTube makeup video recommender. This phase focuses on data ingestion and initial LLM-driven analysis of YouTube channels and their content.
 
-Project Overview
+### Project Overview
 The overall vision for this project is to create a sophisticated makeup video recommendation platform that leverages AI to provide highly personalized suggestions based on a user's unique facial features.
 
 The project is structured into several key phases:
 
-Phase 1a (Current) - Data Ingestion & Initial LLM Analysis:
+### Phase 1a (Current) - Data Ingestion & Initial LLM Analysis:
 
 Searches for relevant YouTube channels.
 
@@ -18,48 +18,48 @@ Utilizes Google Gemini AI to analyze channel content (descriptions & transcripts
 
 Displays the processed and analyzed data.
 
-Phase 1b (Future) - Storing Video Details:
+### Phase 1b (Future) - Storing Video Details:
 
 Extend the data ingestion to include detailed metadata for individual videos, potentially leveraging a database for persistent storage.
 
-Phase 2 (Future) - Developing Recommendation Engine:
+### Phase 2 (Future) - Developing Recommendation Engine:
 
 Implement a recommendation engine that matches user-analyzed facial features with the features identified in video content and creators.
 
 Develop algorithms for ranking and filtering recommendations based on various criteria.
 
-Phase 3 (Future) - FastAPI for UI:
+### Phase 3 (Future) - FastAPI for UI:
 
 Build a FastAPI backend to expose the recommendation engine via an API, allowing a user interface (e.g., a web application) to consume the recommendations.
 
-Scripts Overview
+### Scripts Overview
 This phase includes the following modular Python scripts:
 
-config.py:
+#### config.py:
 
 Purpose: Stores all global configuration variables, including YouTube Data API Key, Gemini API Key, Gemini model names, predefined search queries, and categories for LLM analysis.
 
 Role: Centralized configuration management.
 
-youtube_api_utils.py:
+#### youtube_api_utils.py:
 
 Purpose: Contains functions for interacting with the YouTube Data API. This includes searching for channels, fetching channel statistics, getting the last video upload timestamp, and retrieving video transcripts. It also handles translation of non-English transcripts to English using Gemini.
 
 Role: Handles all YouTube-related data fetching.
 
-gemini_ai_utils.py:
+#### gemini_ai_utils.py:
 
 Purpose: Provides utility functions for interacting with the Google Gemini AI. This includes downloading images and converting them to PIL Image objects, and performing LLM-driven analysis on both images (for facial features from thumbnails) and text (for content analysis from descriptions and transcripts).
 
 Role: Encapsulates all Gemini AI interactions.
 
-main_channel_processor.py:
+#### main_channel_processor.py:
 
 Purpose: The main orchestration script. It imports functions from config, youtube_api_utils, and gemini_ai_utils to execute the full data ingestion and analysis pipeline. It searches for channels, fetches their details, performs LLM analysis, and prints the comprehensive results to the console.
 
 Role: The entry point for running the data processing pipeline.
 
-Setup
+### Setup
 Prerequisites
 Python 3.8+
 
@@ -110,7 +110,7 @@ Replace "YOUR_YOUTUBE_API_KEY" with your actual YouTube Data API Key.
 
 Replace "YOUR_GEMINI_API_KEY" with your actual Gemini API Key.
 
-# config.py
+### config.py
 YOUTUBE_API_KEY = "YOUR_YOUTUBE_API_KEY"
 GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
 
