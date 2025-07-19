@@ -18,8 +18,8 @@ and predefined categories used across different modules of the application.
 # --- API Keys ---
 # IMPORTANT: Replace with your actual YouTube Data API Key and Gemini API Key.
 # It is highly recommended to use environment variables for production applications.
-YOUTUBE_API_KEY = "AIzaSyCM2Ryviuffu6NFNDlcBlfmHaF90319t0k"  # Replace with your YouTube Data API Key
-GEMINI_API_KEY = "AIzaSyCVFKZOqUpoIz75Oi9fOmgtF42S49GIFD8"    # Replace with your Gemini API Key
+YOUTUBE_API_KEY = "*****"  # Replace with your YouTube Data API Key
+GEMINI_API_KEY = "****"    # Replace with your Gemini API Key
 
 # --- Gemini Model Configuration ---
 GEMINI_MULTIMODAL_MODEL = 'gemini-2.0-flash'
